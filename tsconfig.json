@@ -1,12 +1,18 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitAny": true,
+    "strict": true,
+    "newLine": "lf",
+    "moduleResolution": "node16",
+    "module": "node16",
+    "importHelpers": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "removeComments": true,
     "preserveConstEnums": true,
+    "alwaysStrict": true,
+    "resolveJsonModule": true,
+    "typeRoots": ["./node_modules/@types"],
     "outDir": "lib",
-    "moduleResolution": "node",
-    "typeRoots": ["node_modules/@types"],
     "baseUrl": "./src",
     "paths": {
       "*": ["../typings/*"]

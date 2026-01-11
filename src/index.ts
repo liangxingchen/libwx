@@ -1,8 +1,9 @@
-import * as _ from 'lodash';
-import * as stringRandom from 'string-random';
-import * as hasha from 'hasha';
-import akita, { Client } from 'akita';
-import {
+import _ from 'lodash';
+import stringRandom from 'string-random';
+import hasha from 'hasha';
+import akita from 'akita';
+import type { Client } from 'akita';
+import type {
   Options,
   Request,
   Result,
@@ -29,14 +30,19 @@ export default class Weixin {
   _globalTokenTime: number;
   _jsapiTicket: string;
   _jsapiTicketTime: number;
-  _getGlobalTokenPromise: Promise<string>;
+  _getGlobalTokenPromise: Promise<string> | null;
 
   constructor(options?: Options) {
-    this.options = options || ({} as Options);
+    this.options = options || ({} as any);
     if (!this.options.channel) {
       this.options.channel = 'jssdk';
     }
     this._client = akita.create({});
+    this._globalToken = '';
+    this._globalTokenTime = 0;
+    this._jsapiTicket = '';
+    this._jsapiTicketTime = 0;
+    this._getGlobalTokenPromise = null;
   }
 
   /**
@@ -66,6 +72,10 @@ export default class Weixin {
 
   async _getGlobalToken(refresh?: boolean): Promise<string> {
     if (this.options.getGlobalTokenCache) {
+      if (!this.options.setGlobalTokenCache) {
+        throw new Error('libwx setGlobalTokenCache is required when using getGlobalTokenCache');
+      }
+
       if (!refresh) {
         let token = await this.options.getGlobalTokenCache();
         if (token) return token;
@@ -367,8 +377,8 @@ export default class Weixin {
       let data;
       try {
         data = JSON.parse(result.toString());
-      } catch (e) {}
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+      } catch (_e) {}
+
       if (data && data.errmsg) {
         if (!noReTry && /access_token is invalid or not latest/.test(data.errmsg)) {
           // Global Token 过期，刷新重试
@@ -389,7 +399,7 @@ export default class Weixin {
       throw new Error('No media data');
     }
 
-    buffer.type = headers.get('Content-Type') || headers.get('content-type');
+    buffer.type = headers.get('Content-Type') || headers.get('content-type') || 'application/octet-stream';
 
     return buffer;
   }
@@ -422,8 +432,8 @@ export default class Weixin {
       let data;
       try {
         data = JSON.parse(result.toString());
-      } catch (e) {}
-      // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+      } catch (_e) {}
+
       if (data && data.errmsg) {
         if (!noReTry && /access_token is invalid or not latest/.test(data.errmsg)) {
           // Global Token 过期，刷新重试
@@ -446,6 +456,7 @@ export default class Weixin {
    */
   async imgSecCheck(image: Buffer): Promise<boolean> {
     const FormData = this._client.options.FormData;
+    // @ts-ignore FormData 存在
     let body = new FormData();
     body.append('media', image as any, 'image.jpg');
 
@@ -455,7 +466,7 @@ export default class Weixin {
         url: 'https://api.weixin.qq.com/wxa/img_sec_check',
         body
       });
-    } catch (e) {
+    } catch (_e) {
       return false;
     }
     return true;
