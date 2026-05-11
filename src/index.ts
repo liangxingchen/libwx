@@ -63,9 +63,13 @@ export default class Weixin {
     }
     this._getGlobalTokenPromise = this._getGlobalToken(refresh);
 
-    this._getGlobalTokenPromise.finally(() => {
-      this._getGlobalTokenPromise = null;
-    });
+    this._getGlobalTokenPromise
+      .finally(() => {
+        this._getGlobalTokenPromise = null;
+      })
+      .catch(() => {
+        // 吞掉浮动 Promise 的 rejection，不影响调用者通过原始 Promise 获取错误
+      });
 
     return this._getGlobalTokenPromise;
   }
